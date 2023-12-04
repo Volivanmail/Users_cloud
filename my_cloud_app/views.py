@@ -29,13 +29,13 @@ def login_user(request):
         serializer = UserSerializer(data=request.data)
         user = None
         try:
-            user = User.objects.get(login=serializer.login)
+            user = User.objects.get(login=serializer.initial_data['login'])
         except ObjectDoesNotExist:
             pass
         if not user:
-            user = authenticate(serializer.login, serializer.password)
+            user = authenticate(serializer.initial_data['login'], serializer.initial_data['password'])
         if user:
-            token = Token.objects.get_or_create(user=user)
+            token = Token.objects.create(user=user)
             return Response({'token': token.key}, status=status.HTTP_200_OK)
         return Response({'error': 'invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 

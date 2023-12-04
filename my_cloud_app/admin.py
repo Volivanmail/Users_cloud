@@ -3,10 +3,10 @@ from .models import User, File
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ("id", "login", "name", "surname", "email", "password", "admin")
-    list_display_links = ("id", "login")
-    search_fields = ("id", "login", "name", "surname")
-    list_filter = ("id", "login", "name", "surname")
+    list_display = ("id", "login", "username", "email", "password", "admin")
+    list_display_links = ("id", "login","username")
+    search_fields = ("id", "login", "username")
+    list_filter = ("id", "login", "username")
 
 
 admin.site.register(User)

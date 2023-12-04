@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# from my_cloud_app.serializers import UserSerializer
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -130,8 +132,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+USER_DETAILS_SERIALIZER = 'my_cloud_app.serializers.UserSerializer'
 
-# AUTH_USER_MODEL = 'my_cloud_app.User'
+AUTH_USER_MODEL = 'my_cloud_app.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
