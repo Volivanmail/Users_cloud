@@ -13,21 +13,24 @@ class User(AbstractUser):
     password = models.CharField(max_length=100, null=True)
     email = models.EmailField(max_length=100, null=True)
     is_admin = models.BooleanField(default=False, null=True)
-    path = models.TextField(null=True)
+    path = models.FilePathField(null=True, blank=True)
 
     objects = UserManager()
+
     def __str__(self):
         return self.login
 
 
 class File(models.Model):
+    # поменял поля у date_download
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    file_name = models.CharField(max_length=50)
-    description = models.CharField(max_length=300)
-    date_upload = models.DateField(auto_now_add=True)
-    date_download = models.DateTimeField(auto_now_add=True)
-    file_path = models.TextField()
-    file_size = models.FloatField()
+    file_name = models.CharField(max_length=50, null=True)
+    description = models.CharField(max_length=100, null=True)
+    date_upload = models.DateField(auto_now_add=True, null=True)
+    date_download = models.DateField(auto_now=False, null=True)
+    file_path = models.FilePathField(null=True, blank=True)
+    file_size = models.FloatField(null=True, blank=True)
+    link_for_download = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.file_name
