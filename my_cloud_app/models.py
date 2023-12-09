@@ -24,7 +24,7 @@ class User(AbstractUser):
 class File(models.Model):
     # поменял поля у date_download
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    file_name = models.CharField(max_length=50, null=True)
+    file_name = models.CharField(max_length=100, null=True)
     description = models.CharField(max_length=100, null=True)
     date_upload = models.DateField(auto_now_add=True, null=True)
     date_download = models.DateField(auto_now=False, null=True)

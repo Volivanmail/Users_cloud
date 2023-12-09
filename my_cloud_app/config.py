@@ -12,3 +12,4 @@ DB_PASSWORD = config.get('DB_PASSWORD').data
 DB_HOST = config.get('DB_HOST').data
 DB_PORT = config.get('DB_PORT').data
 BASE_DIR_STORAGE = config.get('BASE_DIR_STORAGE').data
+LENGTH_OF_THE_DOWNLOAD_LINK = config.get('LENGTH_OF_THE_DOWNLOAD_LINK').data
