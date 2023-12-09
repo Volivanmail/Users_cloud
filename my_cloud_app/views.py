@@ -238,6 +238,7 @@ def edit_description_file(request):
         except Exception as e:
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
+
 # не проходит
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -251,8 +252,9 @@ def download_file(request):
             file_path = f'{BASE_DIR_STORAGE}{file.file_path}'
             filename = file.file_name
             return create_file_response(file_path, filename)
-    except Exception as (e):
+    except Exception as e:
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
+
 
 # получается
 @api_view(['GET'])
@@ -271,6 +273,7 @@ def creating_link_to_the_file(request):
                                    {'link': one_time_link})
     except Exception as e:
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
+
 
 # не проходит
 @api_view(['GET'])
