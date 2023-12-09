@@ -13,7 +13,7 @@ from rest_framework import status
 from .models import User, File
 from .permissions import IsAdmin
 from .serializers import UserSerializer, FullUserSerializer, FileSerializer
-from .config import BASE_DIR_STORAGE
+from .config import BASE_DIR_STORAGE, LENGTH_OF_THE_DOWNLOAD_LINK
 from .utils import *
 
 
@@ -67,7 +67,8 @@ def logout_user(request):
         try:
             request.user.auth_token.delete()
             return create_response(status.HTTP_200_OK,
-                                            'Выход пользователя осушествлен успешно', True)
+                                   'Выход пользователя осушествлен успешно',
+                                   True)
         except Exception as e:
             return Response(create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e)))
 
@@ -159,32 +160,33 @@ def get_list_files_admin(request):
 @parser_classes([MultiPartParser, FileUploadParser])
 def upload_file(request):
     if request.method == 'POST':
-        # Дописать сохранение пути файла в базу
-        # Дописать сохранение в папку пользователя
-        # Вернуть нормальный респонс
-        # Размер файла
-        # поменял fs = .....
         try:
-            user_id = request.user.id
             user = User.objects.get(pk=request.user.id)
             request_file = request.FILES['file']
             fs = FileSystemStorage(location=f'{BASE_DIR_STORAGE}{user.path}', base_url=user.path)
             file = fs.save(request_file.name, request_file)
+            print(file)
             file_url = fs.url(file)
+            print(file_url)
             file_size = fs.size(file)
-            new_file = File.objects.create(file_name=request_file.name,
-                                           description=request.FILES['description'],
+            parts_url = file_url.split('/')
+            file_name = parts_url[-1]
+            print(file_name)
+            new_file = File.objects.create(user=user,
+                                           file_name=file_name,
+                                           description=request.data['description'],
                                            file_path=file_url,
                                            file_size=file_size
                                            )
             new_file.save()
+            message = create_message_for_upload_file(request_file.name, file_name)
+            print(message)
             return create_response(status.HTTP_200_OK,
-                                   f'Файл {request_file.name} загружен как файл {new_file.name}',
+                                   message,
                                    True,
                                    {'file': request_file.name})
         except Exception as e:
-            return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                   str(e))
+            return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
 @api_view(['DELETE'])
@@ -236,35 +238,52 @@ def edit_description_file(request):
         except Exception as e:
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
+# не проходит
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def download_file(request):
-    if request.method == 'GET':
-        # заменить данные файла
-        file_path = 'text.txt'
-        filename = 'text.txt'
+    try:
+        if request.method == 'GET':
+            print(request.data)
+            file_id = request.GET.get('file_id')
+            file = File.objects.get(pk=file_id)
+            print(file)
+            file_path = f'{BASE_DIR_STORAGE}{file.file_path}'
+            filename = file.file_name
+            return create_file_response(file_path, filename)
+    except Exception as (e):
+        return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
-        return create_file_response(file_path, filename)
-#
-#
+# получается
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def creating_link_to_the_file(request):
-    if request.method == 'GET':
-        length = 20
-        characters = string.ascii_letters + string.digits
-        one_time_link = ''.join(random.choices(characters, k=length))
-        # созранить в базу ссылку для файла
-        # вернул респонс
+    try:
+        if request.method == 'GET':
+            user_id = request.GET.get('user_id')
+            file_id = request.GET.get('file_id')
+            characters = string.ascii_letters + string.digits
+            one_time_link = ''.join(random.choices(characters, k=int(LENGTH_OF_THE_DOWNLOAD_LINK)))
+            File.objects.filter(pk=file_id, user=user_id).update(link_for_download=one_time_link)
+            return create_response(status.HTTP_200_OK,
+                                   'Создана ссылка на скачивание',
+                                   True,
+                                   {'link': one_time_link})
+    except Exception as e:
+        return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
-
+# не проходит
 @api_view(['GET'])
 def download_file_from_link(request):
-    if request.method == 'GET':
-        one_time_link = request.GET.get['link']
-        # пошел в базу, нашел файл по ссылку
-        file_path = ''
-        filename = ''
-        response = create_file_response(file_path, filename)
-        # удалил ссылку
-        return response
+    try:
+        if request.method == 'GET':
+            one_time_link = request.GET.get['link']
+            file = File.objects.filter(link_for_download=one_time_link)
+            file_path = file.file_path
+            filename = file.file_name
+            response = create_file_response(file_path, filename)
+            file.link_for_download = ''
+            file.save(update_fields=['link_for_download'])
+            return response
+    except Exception as e:
+        return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
