@@ -27,7 +27,7 @@ class File(models.Model):
     file_name = models.CharField(max_length=100, null=True)
     description = models.CharField(max_length=100, null=True)
     date_upload = models.DateField(auto_now_add=True, null=True)
-    date_download = models.DateField(auto_now=False, null=True)
+    date_download = models.DateField(null=True)
     file_path = models.FilePathField(null=True, blank=True)
     file_size = models.FloatField(null=True, blank=True)
     link_for_download = models.TextField(null=True, blank=True)
