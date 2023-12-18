@@ -27,7 +27,7 @@ logger = logging.getLogger('my_cloud_api')
 
 # блок api для работы с пользователями
 
-# работает
+
 @api_view(['POST'])
 def register_user(request):
     try:
@@ -49,7 +49,6 @@ def register_user(request):
         logger.error(e)
 
 
-# работает
 @api_view(['POST'])
 def login_user(request):
     if request.method == 'POST':
@@ -63,16 +62,16 @@ def login_user(request):
             user = authenticate(serializer.login, serializer.password)
         if user:
             token = Token.objects.create(user=user)
-            print(token)
             return create_response(status.HTTP_200_OK,
                                    'Авторизация прошла успешно',
                                    True,
-                                   {'token': token.key})
+                                   {'id': user.id,
+                                    'token': token.key,
+                                    'is_admin': user.is_admin})
         return create_response(status.HTTP_401_UNAUTHORIZED,
                                'Ошибка авторизации')
 
 
-# работает
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_user(request):
@@ -87,13 +86,12 @@ def logout_user(request):
             return Response(create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e)))
 
 
-# работает, переделал сериалайзер
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsAdmin])
 def list_users(request):
     if request.method == 'GET':
         try:
-            users = User.objects.all().values('login', 'username', 'email', 'is_admin')
+            users = User.objects.all().values('id', 'login', 'username', 'email', 'is_admin')
             serializer_users = ListUsersSerializer(users, many=True)
             result = serializer_users.data
             logger.info('Получен список пользователей')
@@ -105,7 +103,6 @@ def list_users(request):
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
-# работает
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated, IsAdmin])
 def edit_user(request):
@@ -122,7 +119,6 @@ def edit_user(request):
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
-# работает
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated, IsAdmin])
 def delete_user(request):
@@ -140,7 +136,7 @@ def delete_user(request):
 
 # блок api для работы с файловым хранилищем
 
-# работает
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_list_files(request):
@@ -179,6 +175,7 @@ def get_list_files_admin(request):
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FileUploadParser])
 def upload_file(request):
+    print(request)
     if request.method == 'POST':
         try:
             user = User.objects.get(pk=request.user.id)
@@ -191,7 +188,7 @@ def upload_file(request):
 #                                'Файл с таким именем уже существует')
             file = fs.save(request_file.name, request_file)
             file_path = user.path + '/' + file
-            file_size = fs.size(file)
+            file_size = round(fs.size(file) / 1024)
             new_file = File.objects.create(user=user,
                                            file_name=file,
                                            description=request.data['description'],

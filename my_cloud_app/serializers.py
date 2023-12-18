@@ -25,7 +25,7 @@ class FullUserSerializer(serializers.ModelSerializer):
 class ListUsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['login', 'username', 'email', 'is_admin']
+        fields = ['id', 'login', 'username', 'email', 'is_admin']
 
 
 class FileSerializer(serializers.ModelSerializer):
