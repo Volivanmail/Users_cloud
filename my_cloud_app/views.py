@@ -7,6 +7,7 @@ import datetime
 from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
+from django.db.models import Count, Sum
 
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -92,14 +93,18 @@ def logout_user(request):
 def list_users(request):
     if request.method == 'GET':
         try:
-            users = User.objects.all().values('id', 'login', 'username', 'email', 'is_admin')
-            serializer_users = ListUsersSerializer(users, many=True)
+            users_with_file_count = User.objects.annotate(file_count=Count('file'),
+                                                          total_count=Sum('file__file_size'))
+
+            serializer_users = ListUsersSerializer(users_with_file_count, many=True)
             result = serializer_users.data
+
             logger.info('Получен список пользователей')
             return create_response(status.HTTP_200_OK,
                                    'Получен список пользователей',
                                    True,
-                                   {'users': result})
+                                   {'users': result}
+                                   )
         except Exception as e:
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 

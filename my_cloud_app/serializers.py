@@ -23,9 +23,12 @@ class FullUserSerializer(serializers.ModelSerializer):
 
 
 class ListUsersSerializer(serializers.ModelSerializer):
+    file_count = serializers.IntegerField()
+    total_count = serializers.IntegerField()
+
     class Meta:
         model = User
-        fields = ['id', 'login', 'username', 'email', 'is_admin']
+        fields = ['id', 'login', 'username', 'email', 'is_admin', 'file_count', 'total_count']
 
 
 class FileSerializer(serializers.ModelSerializer):
