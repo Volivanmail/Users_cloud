@@ -56,16 +56,18 @@ def login_user(request):
         user = None
         try:
             user = User.objects.get(login=serializer.initial_data['login'])
+            user.auth_token.delete()
         except ObjectDoesNotExist:
             pass
-        if not user:
-            user = authenticate(serializer.initial_data['login'], serializer.initial_data['password'])
+        if user is not None:
+            user = authenticate(username=serializer.initial_data['login'], password=serializer.initial_data['password'])
         if user:
             token = Token.objects.create(user=user)
             return create_response(status.HTTP_200_OK,
                                    'Авторизация прошла успешно',
                                    True,
                                    {'id': user.id,
+                                    'login': user.login,
                                     'token': token.key,
                                     'is_admin': user.is_admin})
         return create_response(status.HTTP_401_UNAUTHORIZED,
@@ -77,7 +79,6 @@ def login_user(request):
 def logout_user(request):
     if request.method == 'POST':
         try:
-            print(request.user.auth_token)
             request.user.auth_token.delete()
             return create_response(status.HTTP_200_OK,
                                    'Выход пользователя осушествлен успешно',
@@ -109,12 +110,14 @@ def edit_user(request):
     if request.method == 'PUT':
         try:
             serializer = FullUserSerializer(data=request.data)
-            User.objects.filter(pk=serializer.initial_data['id']).update(is_admin=serializer.initial_data['is_admin'])
             user = User.objects.get(pk=serializer.initial_data['id'])
+            is_admin = user.is_admin
+            user.is_admin = not is_admin
+            user.save()
             return create_response(status.HTTP_200_OK,
                                    'Изменение статуса пользователя прошло успешно',
                                    True,
-                                   {'login': user.login, 'is_admin': user.is_admin})
+                                   {'login': user.login, 'is_admin': is_admin})
         except Exception as e:
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
@@ -124,8 +127,8 @@ def edit_user(request):
 def delete_user(request):
     if request.method == 'DELETE':
         try:
-            serializer = FullUserSerializer(data=request.data)
-            user = User.objects.get(pk=serializer.initial_data['id'])
+            user_id = request.GET.get('id')
+            user = User.objects.get(pk=user_id)
             user.delete()
             return create_response(status.HTTP_200_OK,
                                    'Пользователь удален',
@@ -182,10 +185,6 @@ def upload_file(request):
             request_file = request.FILES['file']
             location = f'{BASE_DIR_STORAGE}{user.path}'
             fs = FileSystemStorage(location=location)
-#             file_object = File.objects.filter(file_path=file_path)
-#             if (file_object):
-#                 return create_response(status.HTTP_400_BAD_REQUEST,
-#                                'Файл с таким именем уже существует')
             file = fs.save(request_file.name, request_file)
             file_path = user.path + '/' + file
             file_size = round(fs.size(file) / 1024)
@@ -210,10 +209,10 @@ def upload_file(request):
 def delete_file(request):
     if request.method == 'DELETE':
         try:
-            serializer = FileSerializer(data=request.data)
-            file = File.objects.get(pk=serializer.initial_data['id'])
-            file.delete()
+            file_id = request.GET.get('id')
+            file = File.objects.get(pk=file_id)
             os.remove(f'{BASE_DIR_STORAGE}{file.file_path}')
+            file.delete()
             return create_response(status.HTTP_200_OK,
                                    'Файл удален',
                                    True, )
@@ -264,9 +263,8 @@ def edit_description_file(request):
 def download_file(request):
     try:
         if request.method == 'GET':
-            user = User.objects.get(pk=request.GET.get('user_id'))
             file_id = request.GET.get('file_id')
-            file = File.objects.get(user=user, pk=file_id)
+            file = File.objects.get(pk=file_id)
             file_path = f'{BASE_DIR_STORAGE}{file.file_path}'
             filename = file.file_name
             file.date_download = datetime.datetime.now().date()
@@ -282,11 +280,11 @@ def download_file(request):
 def creating_link_to_the_file(request):
     try:
         if request.method == 'GET':
-            user_id = request.GET.get('user_id')
+            # user_id = request.GET.get('user_id')
             file_id = request.GET.get('file_id')
             characters = string.ascii_letters + string.digits
             one_time_link = ''.join(random.choices(characters, k=int(LENGTH_OF_THE_DOWNLOAD_LINK)))
-            File.objects.filter(pk=file_id, user=user_id).update(link_for_download=one_time_link)
+            File.objects.filter(pk=file_id).update(link_for_download=one_time_link)
             return create_response(status.HTTP_200_OK,
                                    'Создана ссылка на скачивание',
                                    True,
@@ -305,8 +303,8 @@ def download_file_from_link(request):
             file_path = f'{BASE_DIR_STORAGE}{file.file_path}'
             filename = file.file_name
             response = create_file_response(file_path, filename)
-            file.link_for_download = ''
-            file.save(update_fields=['link_for_download'])
+            # file.link_for_download = ''
+            # file.save(update_fields=['link_for_download'])
             return response
     except Exception as e:
         logger.error(str(e))
