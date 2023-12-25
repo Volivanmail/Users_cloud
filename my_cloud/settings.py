@@ -15,6 +15,7 @@ from pathlib import Path
 from django.utils.log import DEFAULT_LOGGING
 
 from my_cloud_app.config import *
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # from my_cloud_app.serializers import UserSerializer
@@ -62,9 +63,17 @@ MIDDLEWARE = [
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
-# CORS_ORIGIN_WHITELIST = (
-#   'http://localhost:3000',
+CORS_ORIGIN_WHITELIST = (
+  'http://localhost:3000',
+)
+
+# CORS_ALLOW_HEADERS = default_headers + (
+#     'Access-Control-Allow-Origin',
 # )
+
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:3030',
+# ]
 
 ROOT_URLCONF = 'my_cloud.urls'
 

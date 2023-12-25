@@ -21,9 +21,6 @@ from .serializers import UserSerializer, FullUserSerializer, FileSerializer, Lis
 from .config import BASE_DIR_STORAGE, LENGTH_OF_THE_DOWNLOAD_LINK
 from .utils import *
 
-
-# Create your views here.
-
 logger = logging.getLogger('my_cloud_api')
 
 # блок api для работы с пользователями
@@ -39,15 +36,17 @@ def register_user(request):
                 user = User.objects.get(login=serializer.initial_data['login'])
                 user.path = f'/{user.id}'
                 user.save(update_fields=['path'])
-                logger.info("Пользователь зарегистрирован" )
+                logger.info("Пользователь зарегистрирован")
                 return create_response(status.HTTP_201_CREATED,
                                        'Пользователь успешно зарегистрирован',
                                        True,
                                        serializer.data)
+            logger.error("Ошибка регистрации пользователя")
             return create_response(status.HTTP_400_BAD_REQUEST,
                                    'Ошибка регистрации пользователя')
     except Exception as e:
-        logger.error(e)
+        logger.error(str(e))
+        return Response(create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e)))
 
 
 @api_view(['POST'])
@@ -64,6 +63,7 @@ def login_user(request):
             user = authenticate(username=serializer.initial_data['login'], password=serializer.initial_data['password'])
         if user:
             token = Token.objects.create(user=user)
+            logger.info("Авторизация прошла успешно")
             return create_response(status.HTTP_200_OK,
                                    'Авторизация прошла успешно',
                                    True,
@@ -71,6 +71,7 @@ def login_user(request):
                                     'login': user.login,
                                     'token': token.key,
                                     'is_admin': user.is_admin})
+        logger.error("Ошибка авторизации")
         return create_response(status.HTTP_401_UNAUTHORIZED,
                                'Ошибка авторизации')
 
@@ -81,10 +82,12 @@ def logout_user(request):
     if request.method == 'POST':
         try:
             request.user.auth_token.delete()
+            logger.info("Выход пользователя осушествлен успешно")
             return create_response(status.HTTP_200_OK,
                                    'Выход пользователя осушествлен успешно',
                                    True)
         except Exception as e:
+            logger.error(str(e))
             return Response(create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e)))
 
 
@@ -106,6 +109,7 @@ def list_users(request):
                                    {'users': result}
                                    )
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -119,11 +123,13 @@ def edit_user(request):
             is_admin = user.is_admin
             user.is_admin = not is_admin
             user.save()
+            logger.info('Изменение статуса поля is_admin пользователя прошло успешно')
             return create_response(status.HTTP_200_OK,
                                    'Изменение статуса пользователя прошло успешно',
                                    True,
                                    {'login': user.login, 'is_admin': is_admin})
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -135,10 +141,12 @@ def delete_user(request):
             user_id = request.GET.get('id')
             user = User.objects.get(pk=user_id)
             user.delete()
+            logger.info("Пользователь удален")
             return create_response(status.HTTP_200_OK,
                                    'Пользователь удален',
                                    True,)
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -153,11 +161,13 @@ def get_list_files(request):
             user_id = request.GET.get("id")
             user = User.objects.get(pk=user_id)
             files = File.objects.filter(user=user).values()
+            logger.info("Получен список файлов пользователя")
             return create_response(status.HTTP_200_OK,
                                    'Получен список файлов пользователя',
                                    True,
                                    {'files': files})
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -170,11 +180,13 @@ def get_list_files_admin(request):
             user_id = request.GET.get("user_id")
             user = User.objects.get(pk=user_id)
             files = File.objects.filter(user=user).values()
+            logger.info("Получен список файлов пользователя")
             return create_response(status.HTTP_200_OK,
                                    'Получен список файлов пользователя',
                                    True,
                                    {'files': files})
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -200,11 +212,13 @@ def upload_file(request):
                                            file_size=file_size
                                            )
             new_file.save()
+            logger.info("Файл загружен")
             return create_response(status.HTTP_200_OK,
                                    f'Файл загружен как файл {file}',
                                    True,
                                    {'file': file})
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -218,14 +232,15 @@ def delete_file(request):
             file = File.objects.get(pk=file_id)
             os.remove(f'{BASE_DIR_STORAGE}{file.file_path}')
             file.delete()
+            logger.info("Файл удален")
             return create_response(status.HTTP_200_OK,
                                    'Файл удален',
                                    True, )
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
-# не переименновывается файл в папке с файлами
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def rename_file(request):
@@ -235,11 +250,13 @@ def rename_file(request):
             serializer = FileSerializer(data=request.data)
             new_file_name = serializer.initial_data['file_name']
             File.objects.filter(pk=serializer.initial_data['id']).update(file_name=new_file_name)
+            logger.info("Имя файла изменено!")
             return create_response(status.HTTP_200_OK,
                                    'Имя файла изменено!',
                                    True,
                                    {'new_file_name ': new_file_name})
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -253,12 +270,14 @@ def edit_description_file(request):
             File.objects.filter(pk=serializer.initial_data['id'])\
                 .update(description=serializer.initial_data['description'])
             file = File.objects.get(pk=serializer.initial_data['id'])
+            logger.info("Обновление описания файла")
             return create_response(status.HTTP_200_OK,
                                    'Обновление описания файла',
                                    True,
                                    {'file_name': file.file_name,
                                     'new_description': file.description})
         except Exception as e:
+            logger.error(str(e))
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -274,8 +293,10 @@ def download_file(request):
             filename = file.file_name
             file.date_download = datetime.datetime.now().date()
             file.save(update_fields=['date_download'])
+            logger.info("Скачивание файла прошло успешно!")
             return create_file_response(file_path, filename)
     except Exception as e:
+        logger.error(str(e))
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -290,11 +311,13 @@ def creating_link_to_the_file(request):
             characters = string.ascii_letters + string.digits
             one_time_link = ''.join(random.choices(characters, k=int(LENGTH_OF_THE_DOWNLOAD_LINK)))
             File.objects.filter(pk=file_id).update(link_for_download=one_time_link)
+            logger.info("Ссылка на скачивание создана")
             return create_response(status.HTTP_200_OK,
                                    'Создана ссылка на скачивание',
                                    True,
                                    {'link': one_time_link})
     except Exception as e:
+        logger.error(str(e))
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
@@ -310,7 +333,11 @@ def download_file_from_link(request):
             response = create_file_response(file_path, filename)
             # file.link_for_download = ''
             # file.save(update_fields=['link_for_download'])
-            return response
+            logger.info("Скачивание файла прошло успешно!")
+            return create_response(status.HTTP_200_OK,
+                                   "Скачивание файла прошло успешно!",
+                                   True,
+                                   {'file_name': file.file_name})
     except Exception as e:
         logger.error(str(e))
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
