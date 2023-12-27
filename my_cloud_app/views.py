@@ -334,10 +334,11 @@ def download_file_from_link(request):
             # file.link_for_download = ''
             # file.save(update_fields=['link_for_download'])
             logger.info("Скачивание файла прошло успешно!")
-            return create_response(status.HTTP_200_OK,
-                                   "Скачивание файла прошло успешно!",
-                                   True,
-                                   {'file_name': file.file_name})
+            return response
+            # return create_response(status.HTTP_200_OK,
+            #                        "Скачивание файла прошло успешно!",
+            #                        True,
+            #                        {'file_name': file.file_name})
     except Exception as e:
         logger.error(str(e))
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
