@@ -23,8 +23,8 @@ from .utils import *
 
 logger = logging.getLogger('my_cloud_api')
 
-# блок api для работы с пользователями
 
+# блок api для работы с пользователями
 
 @api_view(['POST'])
 def register_user(request):
@@ -152,7 +152,6 @@ def delete_user(request):
 
 # блок api для работы с файловым хранилищем
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_list_files(request):
@@ -190,7 +189,6 @@ def get_list_files_admin(request):
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
-# размер файла норм сделать, что то с кодировкой
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FileUploadParser])
@@ -281,7 +279,6 @@ def edit_description_file(request):
             return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
-# работает
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def download_file(request):
@@ -300,7 +297,6 @@ def download_file(request):
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
-# получается
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def creating_link_to_the_file(request):
@@ -321,7 +317,6 @@ def creating_link_to_the_file(request):
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 
-# не проходит
 @api_view(['GET'])
 def download_file_from_link(request):
     try:
@@ -335,10 +330,6 @@ def download_file_from_link(request):
             # file.save(update_fields=['link_for_download'])
             logger.info("Скачивание файла прошло успешно!")
             return response
-            # return create_response(status.HTTP_200_OK,
-            #                        "Скачивание файла прошло успешно!",
-            #                        True,
-            #                        {'file_name': file.file_name})
     except Exception as e:
         logger.error(str(e))
         return create_response(status.HTTP_500_INTERNAL_SERVER_ERROR, str(e))
