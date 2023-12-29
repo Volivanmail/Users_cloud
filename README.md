@@ -57,16 +57,20 @@ ___
 ```
 pip install -r requirements.txt
 ```
-2. Проверьте файл конфигурации, измените конфигурацию почтового ящика и базы данных
+2. Создайте в корне проекта файл .env и пропишите переменные
 ```
 # my_cloud_app/app_config.properties
-
-DB_ENGINE=django.db.backends.postgresql_psycopg2
-DB_NAME=название базы данных
-DB_USER=пользователь в Postgres
-DB_PASSWORD=пароль
+```
+```
+SECRET_KEY=*******
+DEBUG=True
+ALLOWED_HOSTS=*******,localhost,127.0.0.1
+DB_NAME=*****
+DB_USER=******
+DB_PASSWORD=******
 DB_HOST=127.0.0.1
 DB_PORT=5432
+```
 
 
 3.Создать структуру базы данных

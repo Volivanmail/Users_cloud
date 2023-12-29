@@ -15,7 +15,6 @@ import environ
 import os
 from django.utils.log import DEFAULT_LOGGING
 
-from my_cloud_app.config import *
 from corsheaders.defaults import default_headers
 
 env = environ.Env(
@@ -107,12 +106,12 @@ WSGI_APPLICATION = 'my_cloud.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': DB_ENGINE,
-        'NAME': DB_NAME,
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'HOST': DB_HOST,
-        'PORT': DB_PORT,
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env.int('DB_PORT'),
     }
 }
 
